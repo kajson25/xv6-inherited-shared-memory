@@ -441,3 +441,55 @@ sys_pipe(void)
 	fd[1] = fd1;
 	return 0;
 }
+
+int
+sys_sharedData(void)
+{
+	struct proc* curproc = myproc();
+	char* name;
+	uint vmStart;
+	int size;
+	struct shared shared;
+
+	if(argstr(0, &name) < 0 || argptr(1, (void*)&vmStart, sizeof(uint)) < 0 || argint(2, &size) < 0){
+		return -1;
+	}
+
+	for(int i = 0; i < 10; i++){
+		if(curproc->nizDeljenih[i].size == 0){
+			strncpy(shared.name, name, 10);
+			shared.vmStart = vmStart;
+			shared.size = size;
+			curproc->nizDeljenih[i] = shared;
+			return i;
+		}
+		if(strncmp(curproc->nizDeljenih[i].name, name, 10) == 0){
+			return -2;
+		}
+		return -3;
+	}
+
+
+}
+
+int 
+sys_getData(void)
+{
+	struct proc* curproc = myproc();
+	char* name;
+	uint** addr;
+
+	if(argstr(0, &name) < 0 || argptr(1, &addr, sizeof(int)) < 0){
+		return -1;
+	}
+
+	for(int i = 0; i < 10; i++){
+		if(strncmp(curproc->nizDeljenih[i].name, name, 10) == 0){
+			*addr = curproc->nizDeljenih[i].vmStart;           /// dereferenciranje dvostrukog pokazivaca (koji pokazuje na podatak u fizickoj memooriji)
+			return 0;
+		}
+	}
+
+
+	return -2;
+}

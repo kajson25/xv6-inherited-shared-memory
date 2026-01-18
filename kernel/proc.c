@@ -196,9 +196,19 @@ fork(void)
 		np->state = UNUSED;
 		return -1;
 	}
-	np->sz = curproc->sz;
+	np->sz = curproc->sz;  /// isti size
 	np->parent = curproc;
 	*np->tf = *curproc->tf;
+	np -> parentPgDir = curproc->pgdir;
+
+	for(int i = 0; i < 10; i++){
+		if(curproc->nizDeljenih[i].size == 0){
+			break;
+		} else {
+			np -> nizDeljenih[i] = curproc->nizDeljenih[i];  /// od deteta smo napravili kopiju roditelja
+		}
+
+	}
 
 	// Clear %eax so that fork returns 0 in the child.
 	np->tf->eax = 0;
@@ -265,6 +275,17 @@ exit(void)
 	curproc->state = ZOMBIE;
 	sched();
 	panic("zombie exit");
+
+
+	for(int i = 0; i < 10; i++){
+
+		if(curproc->parent == 0){
+			kfree(curproc->nizDeljenih[i].vmStart);  /// ukoliko je roditelj, brisemo fizicku 
+		}
+		curproc->nizDeljenih[i].vmStart = 0;    /// pokazivaci kod dece pokazuju na 0 (ni na sta)
+		curproc->nizDeljenih[i].size = 0;
+		
+	}
 }
 
 // Wait for a child process to exit and return its pid.
